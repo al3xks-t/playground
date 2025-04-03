@@ -1,0 +1,50 @@
+name: In-Class Matrix Challenge
+
+on:
+  workflow_dispatch: # Manually triggerable
+
+jobs:
+  matrix_build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: [small, medium, large]
+    outputs:
+      small_msg: ${{ steps.set-output-small.outputs.status_msg }}
+      medium_msg: ${{ steps.set-output-medium.outputs.status_msg }}
+      large_msg: ${{ steps.set-output-large.outputs.status_msg }}
+
+    steps:
+      - name: Echo matrix config
+        run: echo "Running ${{ matrix.config }} configuration"
+
+      - name: Only for large build
+        if: matrix.config == 'large'
+        run: echo "This step only runs for the 'large' build"
+
+      - name: Set output for small
+        if: matrix.config == 'small'
+        id: set-output-small
+        run: echo "status_msg=Completed small build" >> $GITHUB_OUTPUT
+
+      - name: Set output for medium
+        if: matrix.config == 'medium'
+        id: set-output-medium
+        run: echo "status_msg=Completed medium build" >> $GITHUB_OUTPUT
+
+      - name: Set output for large
+        if: matrix.config == 'large'
+        id: set-output-large
+        run: echo "status_msg=Completed large build" >> $GITHUB_OUTPUT
+
+  aggregate_results:
+    needs: matrix_build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write summary table
+        run: |
+          echo "| Config | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Small  | ${{ needs.matrix_build.outputs.small_msg }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Medium | ${{ needs.matrix_build.outputs.medium_msg }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Large  | ${{ needs.matrix_build.outputs.large_msg }} |" >> $GITHUB_STEP_SUMMARY
